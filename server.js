@@ -5,50 +5,55 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-app.use(express.json({ limit: "30mb" }));
+app.use(express.json({ limit: "50mb" }));
 app.use(express.static(__dirname));
 
-async function askAI(parts) {
+async function askGemini(parts) {
   if (!GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is missing.");
+    throw new Error("GEMINI_API_KEY is missing in Render.");
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts
-          }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 500
+  const url =
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    "gemini-2.5-flash:generateContent?key=" +
+    encodeURIComponent(GEMINI_API_KEY);
+
+  const r = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: parts
         }
-      })
-    }
-  );
+      ]
+    })
+  });
 
-  const data = await response.json();
+  const data = await r.json();
 
-  if (!response.ok) {
+  if (!r.ok) {
+    console.error("Gemini error:", data);
     throw new Error(
-      data?.error?.message || "AI request failed."
+      data?.error?.message ||
+      "Gemini request failed."
     );
   }
 
-  return (
+  const text =
     data?.candidates?.[0]?.content?.parts
-      ?.map(part => part.text || "")
+      ?.map(p => p.text || "")
       .join("")
-      .trim() || "I couldn't generate a response."
-  );
+      .trim();
+
+  if (!text) {
+    throw new Error("Gemini returned no text.");
+  }
+
+  return text;
 }
 
 app.get("/", (req, res) => {
@@ -72,26 +77,24 @@ app.post("/api/chat", async (req, res) => {
 
     if (!message) {
       return res.status(400).json({
-        error: "Message is empty."
+        error: "No message."
       });
     }
 
-    const reply = await askAI([
+    const reply = await askGemini([
       {
-        text: `You are TopX AI, a smart personal voice assistant.
-
-Be intelligent, friendly, natural and concise.
-Never pretend you performed an action that you cannot actually perform.
-The user said:
-
-${message}`
+        text:
+          "You are TopX AI, a friendly personal voice assistant. " +
+          "Answer naturally and concisely.\n\n" +
+          "User: " +
+          message
       }
     ]);
 
     res.json({ reply });
 
   } catch (error) {
-    console.error(error);
+    console.error("Chat:", error);
 
     res.status(500).json({
       error: error.message
@@ -102,11 +105,6 @@ ${message}`
 app.post("/api/voice", async (req, res) => {
   try {
     const audio = req.body?.audio;
-    const mimeType =
-      String(
-        req.body?.mimeType ||
-        "audio/webm"
-      ).split(";")[0];
 
     if (!audio) {
       return res.status(400).json({
@@ -114,38 +112,74 @@ app.post("/api/voice", async (req, res) => {
       });
     }
 
-    const base64Audio =
+    let mimeType =
+      String(
+        req.body?.mimeType ||
+        "audio/webm"
+      ).split(";")[0];
+
+    /*
+      Gemini supports common audio formats.
+      iPhone Safari may return audio/mp4,
+      while other browsers commonly return audio/webm.
+    */
+
+    const allowed = [
+      "audio/webm",
+      "audio/mp4",
+      "audio/mpeg",
+      "audio/wav",
+      "audio/ogg",
+      "audio/aac"
+    ];
+
+    if (!allowed.includes(mimeType)) {
+      mimeType = "audio/webm";
+    }
+
+    const base64 =
       audio.replace(
         /^data:[^;]+;base64,/,
         ""
       );
 
-    const reply = await askAI([
+    console.log(
+      "Voice received:",
+      mimeType,
+      "bytes:",
+      base64.length
+    );
+
+    const reply = await askGemini([
       {
         inline_data: {
           mime_type: mimeType,
-          data: base64Audio
+          data: base64
         }
       },
       {
-        text: `You are TopX AI.
-
-Listen to the user's voice recording.
-Understand what the user said.
-Reply naturally as a personal AI assistant.
-
-Return only the answer that should be spoken aloud.
-Keep it reasonably short.`
+        text:
+          "You are TopX AI. " +
+          "Listen to the user's recording and understand what they said. " +
+          "Reply naturally as a personal voice assistant. " +
+          "Return ONLY the answer to the user. " +
+          "Keep the answer reasonably short."
       }
     ]);
 
-    res.json({ reply });
+    console.log("Voice reply:", reply);
+
+    res.json({
+      reply: reply
+    });
 
   } catch (error) {
-    console.error(error);
+    console.error("VOICE ERROR:", error);
 
     res.status(500).json({
-      error: error.message
+      error:
+        "TopX AI could not process the recording: " +
+        error.message
     });
   }
 });
