@@ -1,0 +1,184 @@
+```html
+<script>
+  // ==============================
+  // TOPX QUICK ACTIONS
+  // ==============================
+
+  // CHANGE THIS to your real Instagram username
+  const MY_INSTAGRAM =
+    "https://www.instagram.com/warfere_98/";
+
+  function openInstagram() {
+    window.open(MY_INSTAGRAM, "_blank");
+  }
+
+  function openYouTube(song) {
+    const query = encodeURIComponent(song);
+    window.open(
+      "https://www.youtube.com/results?search_query=" + query,
+      "_blank"
+    );
+  }
+
+  function openTikTok(song) {
+    const query = encodeURIComponent(song);
+    window.open(
+      "https://www.tiktok.com/search?q=" + query,
+      "_blank"
+    );
+  }
+
+  function handleTopXCommand(message) {
+    const command = message.toLowerCase().trim();
+
+    // Instagram
+    if (
+      command.includes("open my instagram") ||
+      command.includes("go to my instagram") ||
+      command.includes("take me to instagram") ||
+      command === "instagram"
+    ) {
+      openInstagram();
+
+      addMessage(
+        "Opening your Instagram.",
+        "ai"
+      );
+
+      speak("Opening your Instagram.");
+      return true;
+    }
+
+    // YouTube music
+    if (
+      command.includes("play") &&
+      (
+        command.includes("youtube") ||
+        command.includes("song")
+      )
+    ) {
+      let song = message
+        .replace(/play/ig, "")
+        .replace(/on youtube/ig, "")
+        .replace(/youtube/ig, "")
+        .trim();
+
+      if (!song) {
+        song = "music";
+      }
+
+      openYouTube(song);
+
+      addMessage(
+        "Opening YouTube for " + song + ".",
+        "ai"
+      );
+
+      speak("Opening YouTube for " + song + ".");
+      return true;
+    }
+
+    // TikTok music
+    if (
+      (
+        command.includes("play") ||
+        command.includes("find") ||
+        command.includes("search")
+      ) &&
+      command.includes("tiktok")
+    ) {
+      let song = message
+        .replace(/play/ig, "")
+        .replace(/find/ig, "")
+        .replace(/search/ig, "")
+        .replace(/on tiktok/ig, "")
+        .replace(/tiktok/ig, "")
+        .trim();
+
+      if (!song) {
+        song = "music";
+      }
+
+      openTikTok(song);
+
+      addMessage(
+        "Opening TikTok for " + song + ".",
+        "ai"
+      );
+
+      speak("Opening TikTok for " + song + ".");
+      return true;
+    }
+
+    return false;
+  }
+
+
+  // ==============================
+  // REPLACE YOUR askTopX FUNCTION
+  // WITH THIS VERSION
+  // ==============================
+
+  async function askTopX(message) {
+
+    if (!message.trim()) return;
+
+    addMessage(message, "user");
+
+    // Check local commands first
+    if (handleTopXCommand(message)) {
+      return;
+    }
+
+    status.textContent = "THINKING...";
+    hint.textContent = "TopX is thinking...";
+
+    try {
+
+      const response = await fetch("/api/chat", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          message: message
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Server error");
+      }
+
+      const data = await response.json();
+
+      const answer =
+        data.reply ||
+        data.response ||
+        data.text ||
+        "Sorry, I couldn't answer that.";
+
+      addMessage(answer, "ai");
+
+      status.textContent = "ONLINE";
+      hint.textContent = "Tap the microphone to talk";
+
+      // Automatically speak the answer
+      speak(answer);
+
+    } catch (error) {
+
+      console.error(error);
+
+      addMessage(
+        "Sorry, something went wrong connecting to TopX.",
+        "ai"
+      );
+
+      status.textContent = "ONLINE";
+      hint.textContent = "Tap the microphone to talk";
+    }
+  }
+</script>
+```
