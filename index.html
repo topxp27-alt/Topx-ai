@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#050713">
+<title>TopX AI</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  width:100%;
+  min-height:100%;
+  background:#03050f;
+  color:white;
+  font-family:Arial,Helvetica,sans-serif;
+  overflow-x:hidden;
+}
+
+body{
+  background:
+    radial-gradient(circle at 50% 35%,#171b58 0%,#080b25 28%,#03050f 65%);
+}
+
+/* BACKGROUND */
+.space{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  overflow:hidden;
+  z-index:0;
+}
+
+.grid{
+  position:absolute;
+  inset:0;
+  opacity:.22;
+  background-image:
+    linear-gradient(rgba(55,130,255,.12) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(55,130,255,.12) 1px,transparent 1px);
+  background-size:45px 45px;
+  transform:perspective(500px) rotateX(55deg) scale(1.5);
+  transform-origin:center bottom;
+}
+
+.glow{
+  position:absolute;
+  width:500px;
+  height:500px;
+  left:50%;
+  top:180px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:radial-gradient(circle,#5638ff55,transparent 65%);
+  filter:blur(20px);
+}
+
+/* HEADER */
+header{
+  position:relative;
+  z-index:5;
+  height:82px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 25px;
+  border-bottom:1px solid #29305c;
+  background:rgba(3,5,18,.82);
+  backdrop-filter:blur(15px);
+}
+
+.logo{
+  font-size:34px;
+  font-weight:800;
+  letter-spacing:-1px;
+}
+
+.logo span{
+  color:#7348ff;
+  text-shadow:0 0 20px #7348ff;
+}
+
+.status{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:#aab5d8;
+  font-size:17px;
+}
+
+.statusDot{
+  width:13px;
+  height:13px;
+  border-radius:50%;
+  background:#38ff91;
+  box-shadow:0 0 18px #38ff91;
+}
+
+/* MAIN */
+main{
+  position:relative;
+  z-index:2;
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+
+/* HUD */
+.hud{
+  display:grid;
+  grid-template-columns:220px 1fr 220px;
+  gap:15px;
+  align-items:center;
+}
+
+.panel{
+  border:1px solid #26366e;
+  background:linear-gradient(145deg,rgba(15,21,51,.88),rgba(5,8,24,.8));
+  border-radius:16px;
+  padding:18px;
+  box-shadow:
+    inset 0 0 30px rgba(49,76,255,.06),
+    0 0 25px rgba(36,62,180,.08);
+}
+
+.panelTitle{
+  color:#5ee7ff;
+  font-size:12px;
+  letter-spacing:2px;
+  margin-bottom:17px;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  margin:14px 0;
+  color:#9fa9ce;
+  font-size:13px;
+}
+
+.bar{
+  height:5px;
+  background:#141b3c;
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:7px;
+}
+
+.bar i{
+  display:block;
+  height:100%;
+  width:65%;
+  background:linear-gradient(90deg,#00d9ff,#7b36ff);
+  box-shadow:0 0 12px #426cff;
+}
+
+/* ROBOT */
+.robotArea{
+  position:relative;
+  height:610px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.robot{
+  position:relative;
+  width:300px;
+  height:470px;
+  filter:drop-shadow(0 0 35px rgba(49,105,255,.45));
+}
+
+/* HEAD */
+.head{
+  position:absolute;
+  width:150px;
+  height:180px;
+  left:75px;
+  top:35px;
+  border-radius:48% 48% 45% 45%;
+  background:
+    linear-gradient(145deg,#8190b8,#17203d 45%,#070c1d 80%);
+  border:2px solid #5877b8;
+  box-shadow:
+    inset 0 0 30px #607fff44,
+    0 0 25px #266aff55;
+}
+
+.head:before{
+  content:"TOPX";
+  position:absolute;
+  top:17px;
+  left:0;
+  right:0;
+  text-align:center;
+  color:#6ce9ff;
+  font-weight:bold;
+  letter-spacing:3px;
+  text-shadow:0 0 12px #00d9ff;
+}
+
+/* EYES */
+.eye{
+  position:absolute;
+  width:42px;
+  height:12px;
+  top:82px;
+  background:#52eaff;
+  border-radius:50%;
+  box-shadow:0 0 12px #00eaff,0 0 30px #237aff;
+}
+
+.eye.left{left:25px;transform:rotate(-5deg)}
+.eye.right{right:25px;transform:rotate(5deg)}
+
+.nose{
+  position:absolute;
+  top:102px;
+  left:70px;
+  width:10px;
+  height:32px;
+  border-radius:10px;
+  background:#374d78;
+}
+
+.mouth{
+  position:absolute;
+  top:143px;
+  left:49px;
+  width:52px;
+  height:8px;
+  border-bottom:2px solid #65dfff;
+  border-radius:50%;
+}
+
+/* NECK */
+.neck{
+  position:absolute;
+  top:205px;
+  left:120px;
+  width:60px;
+  height:70px;
+  background:linear-gradient(#243558,#080e20);
+  border:1px solid #466aa3;
+}
+
+/* BODY */
+.body{
+  position:absolute;
+  top:245px;
+  left:35px;
+  width:230px;
+  height:225px;
+  border-radius:45px 45px 20px 20px;
+  background:
+    linear-gradient(135deg,#445a86,#101a35 45%,#060a18);
+  border:2px solid #3b609d;
+  box-shadow:inset 0 0 50px #4575ff22;
+}
+
+/* CHEST CORE */
+.core{
+  position:absolute;
+  left:75px;
+  top:50px;
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  border:5px solid #4a8cff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:radial-gradient(circle,#4b35ff,#07133a 65%);
+  box-shadow:
+    0 0 20px #376cff,
+    0 0 50px #5b32ff;
+  animation:pulse 2s infinite;
+}
+
+.core span{
+  font-size:14px;
+  font-weight:bold;
+  color:#fff;
+  text-shadow:0 0 12px #fff;
+}
+
+@keyframes pulse{
+  50%{transform:scale(1.07);box-shadow:0 0 35px #376cff,0 0 70px #5b32ff}
+}
+
+/* HOLOGRAPHIC RINGS */
+.ring{
+  position:absolute;
+  left:50%;
+  top:50%;
+  border:1px solid #5c55ff;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
+.r1{
+  width:350px;
+  height:350px;
+  animation:spin 18s linear infinite;
+}
+
+.r2{
+  width:430px;
+  height:430px;
+  border-color:#00d9ff55;
+  animation:spinReverse 25s linear infinite;
+}
+
+.r3{
+  width:510px;
+  height:510px;
+  border-color:#7448ff44;
+  animation:spin 35s linear infinite;
+}
+
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes spinReverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}
+
+/* CHAT */
+.chat{
+  margin-top:10px;
+  max-height:210px;
+  overflow:auto;
+}
+
+.message{
+  padding:12px 15px;
+  margin:8px 0;
+  border-radius:12px;
+  border:1px solid #29366e;
+  background:#0d1228;
+  color:#dce5ff;
+}
+
+.message.user{
+  border-color:#523cff;
+  background:#151238;
+}
+
+/* VOICE AREA */
+.voiceArea{
+  margin-top:15px;
+  text-align:center;
+  padding:20px;
+}
+
+.mic{
+  width:105px;
+  height:105px;
+  border-radius:50%;
+  border:2px solid #7652ff;
+  background:radial-gradient(circle,#643dff,#151447);
+  color:white;
+  font-size:42px;
+  cursor:pointer;
+  box-shadow:0 0 25px #5b3cff,0 0 70px #3824aa55;
+  transition:.2s;
+}
+
+.mic:active{
+  transform:scale(.94);
+}
+
+.mic.listening{
+  animation:listen 1s infinite;
+  border-color:#00eaff;
+}
+
+@keyframes listen{
+  50%{
+    box-shadow:0 0 30px #00eaff,0 0 100px #00aaff;
+    transform:scale(1.08);
+  }
+}
+
+.voiceText{
+  margin-top:12px;
+  color:#9ca9d2;
+}
+
+.wave{
+  height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  margin:10px auto;
+}
+
+.wave i{
+  width:4px;
+  height:10px;
+  border-radius:5px;
+  background:linear-gradient(#00eaff,#7c3cff);
+}
+
+.wave.active i{
+  animation:wave .55s infinite alternate;
+}
+
+.wave i:nth-child(2){animation-delay:.05s}
+.wave i:nth-child(3){animation-delay:.1s}
+.wave i:nth-child(4){animation-delay:.15s}
+.wave i:nth-child(5){animation-delay:.2s}
+.wave i:nth-child(6){animation-delay:.25s}
+.wave i:nth-child(7){animation-delay:.3s}
+.wave i:nth-child(8){animation-delay:.35s}
+
+@keyframes wave{
+  to{height:45px}
+}
+
+/* COMMANDS */
+.commands{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:15px;
+}
+
+.command{
+  padding:15px 8px;
+  text-align:center;
+  border:1px solid #273566;
+  border-radius:12px;
+  background:#090e24;
+  color:#aeb8da;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.command:hover{
+  border-color:#6d4aff;
+  box-shadow:0 0 20px #5136aa33;
+  color:white;
+}
+
+.command b{
+  display:block;
+  color:#55e8ff;
+  margin-bottom:5px;
+}
+
+/* MOBILE */
+@media(max-width:800px){
+  .hud{
+    grid-template-columns:1fr;
+  }
+
+  .robotArea{
+    height:500px;
+  }
+
+  .panel{
+    display:none;
+  }
+
+  .robot{
+    transform:scale(.82);
+  }
+
+  .commands{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  header{
+    padding:0 18px;
+  }
+
+  .logo{
+    font-size:29px;
+  }
+
+  main{
+    padding:10px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="space">
+  <div class="grid"></div>
+  <div class="glow"></div>
+</div>
+
+<header>
+  <div class="logo">Top<span>X</span> AI</div>
+
+  <div class="status">
+    <div class="statusDot"></div>
+    <span id="status">ONLINE</span>
+  </div>
+</header>
+
+<main>
+
+  <section class="hud">
+
+    <div class="panel">
+      <div class="panelTitle">AI STATUS</div>
+
+      <div class="row">
+        <span>LISTENING</span>
+        <span id="listenState">●</span>
+      </div>
+
+      <div class="row">
+        <span>PROCESSING</span>
+        <span>●</span>
+      </div>
+
+      <div class="row">
+        <span>THINKING</span>
+        <span>●</span>
+      </div>
+
+      <div class="row">
+        <span>SPEAKING</span>
+        <span>●</span>
+      </div>
+    </div>
+
+    <div class="robotArea">
+
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+
+      <div class="robot">
+
+        <div class="head">
+          <div class="eye left"></div>
+          <div class="eye right"></div>
+          <div class="nose"></div>
+          <div class="mouth"></div>
+        </div>
+
+        <div class="neck"></div>
+
+        <div class="body">
+          <div class="core">
+            <span>TOPX</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="panel">
+
+      <div class="panelTitle">SYSTEM METRICS</div>
+
+      <div class="row">
+        <span>CPU</span>
+        <span>32%</span>
+      </div>
+      <div class="bar"><i style="width:32%"></i></div>
+
+      <div class="row">
+        <span>MEMORY</span>
+        <span>61%</span>
+      </div>
+      <div class="bar"><i style="width:61%"></i></div>
+
+      <div class="row">
+        <span>NETWORK</span>
+        <span>ONLINE</span>
+      </div>
+      <div class="bar"><i style="width:87%"></i></div>
+
+      <div class="row">
+        <span>AI</span>
+        <span style="color:#42ff9b">READY</span>
+      </div>
+
+    </div>
+
+  </section>
+
+  <section class="panel">
+
+    <div class="panelTitle">TOPX AI CONVERSATION</div>
+
+    <div id="chat" class="chat">
+      <div class="message">
+        Hey, I'm TopX. I'm ready to listen.
+      </div>
+    </div>
+
+  </section>
+
+  <section class="voiceArea">
+
+    <div class="wave" id="wave">
+      <i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i>
+    </div>
+
+    <button class="mic" id="mic">🎙️</button>
+
+    <div class="voiceText" id="voiceText">
+      Tap the microphone and talk to TopX
+    </div>
+
+  </section>
+
+  <section class="commands">
+
+    <div class="command" onclick="quick('Call my contact')">
+      <b>☎</b>
+      CALL
+    </div>
+
+    <div class="command" onclick="quick('Play my favorite music')">
+      <b>♫</b>
+      MUSIC
+    </div>
+
+    <div class="command" onclick="quick('Open YouTube')">
+      <b>▶</b>
+      YOUTUBE
+    </div>
+
+    <div class="command" onclick="quick('What can you do?')">
+      <b>✦</b>
+      MORE
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+const mic = document.getElementById("mic");
+const voiceText = document.getElementById("voiceText");
+const wave = document.getElementById("wave");
+const chat = document.getElementById("chat");
+const status = document.getElementById("status");
+
+let recognition;
+let listening = false;
+
+function addMessage(text, user=false){
+  const div=document.createElement("div");
+  div.className="message"+(user?" user":"");
+  div.textContent=text;
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function speak(text){
+  if(!("speechSynthesis" in window)){
+    return;
+  }
+
+  speechSynthesis.cancel();
+
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.rate=.95;
+  utterance.pitch=.95;
+  utterance.volume=1;
+
+  utterance.onstart=()=>{
+    status.textContent="SPEAKING";
+    voiceText.textContent="TopX is speaking...";
+    wave.classList.add("active");
+  };
+
+  utterance.onend=()=>{
+    status.textContent="ONLINE";
+    voiceText.textContent="Tap the microphone and talk to TopX";
+    wave.classList.remove("active");
+  };
+
+  speechSynthesis.speak(utterance);
+}
+
+async function askAI(text){
+
+  addMessage(text,true);
+
+  status.textContent="THINKING";
+  voiceText.textContent="TopX is thinking...";
+
+  try{
+
+    /*
+      This expects your server.js to expose:
+
+      POST /api/chat
+
+      with:
+      { "message": "hello" }
+
+      and return:
+      { "reply": "Hello!" }
+    */
+
+    const response=await fetch("/api/chat",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        message:text
+      })
+    });
+
+    if(!response.ok){
+      throw new Error("Server error");
+    }
+
+    const data=await response.json();
+
+    const reply=data.reply || data.message || "I received that.";
+
+    addMessage(reply);
+
+    speak(reply);
+
+  }catch(error){
+
+    console.error(error);
+
+    const reply="I'm connected, but I couldn't reach my AI service right now.";
+
+    addMessage(reply);
+    speak(reply);
+
+    status.textContent="ONLINE";
+    voiceText.textContent="Tap the microphone and try again";
+  }
+}
+
+function setupVoice(){
+
+  const SpeechRecognition=
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if(!SpeechRecognition){
+
+    voiceText.textContent=
+      "Voice recognition is not supported in this browser.";
+
+    mic.disabled=true;
+    return;
+  }
+
+  recognition=new SpeechRecognition();
+
+  recognition.lang="en-US";
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+
+  recognition.onstart=()=>{
+
+    listening=true;
+
+    mic.classList.add("listening");
+    wave.classList.add("active");
+
+    status.textContent="LISTENING";
+    voiceText.textContent="I'm listening...";
+  };
+
+  recognition.onresult=event=>{
+
+    const text=event.results[0][0].transcript;
+
+    voiceText.textContent="I heard: "+text;
+
+    askAI(text);
+  };
+
+  recognition.onerror=event=>{
+
+    console.log("Voice error:",event.error);
+
+    listening=false;
+
+    mic.classList.remove("listening");
+    wave.classList.remove("active");
+
+    status.textContent="ONLINE";
+
+    if(event.error==="not-allowed"){
+      voiceText.textContent=
+        "Microphone permission was blocked.";
+    }else{
+      voiceText.textContent=
+        "I couldn't hear that. Tap the microphone and try again.";
+    }
+  };
+
+  recognition.onend=()=>{
+
+    listening=false;
+
+    mic.classList.remove("listening");
+
+    if(status.textContent==="LISTENING"){
+      status.textContent="ONLINE";
+    }
+  };
+}
+
+mic.addEventListener("click",()=>{
+
+  if(!recognition){
+    setupVoice();
+  }
+
+  if(listening){
+    recognition.stop();
+    return;
+  }
+
+  try{
+    recognition.start();
+  }catch(error){
+    console.log(error);
+  }
+});
+
+function quick(text){
+  askAI(text);
+}
+
+setupVoice();
+</script>
+
+</body>
+</html>
