@@ -4,6 +4,7 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const MODEL = "gemini-3.6-flash";
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.static(__dirname));
@@ -14,14 +15,13 @@ async function askGemini(parts) {
   }
 
   const url =
-    "https://generativelanguage.googleapis.com/v1beta/models/" +
-    "gemini-2.5-flash:generateContent?key=" +
-    encodeURIComponent(GEMINI_API_KEY);
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
-  const r = await fetch(url, {
+  const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "x-goog-api-key": GEMINI_API_KEY
     },
     body: JSON.stringify({
       contents: [
@@ -33,21 +33,21 @@ async function askGemini(parts) {
     })
   });
 
-  const data = await r.json();
+  const data = await response.json();
 
-  if (!r.ok) {
-    console.error("Gemini error:", data);
+  if (!response.ok) {
+    console.error("Gemini API error:", data);
+
     throw new Error(
       data?.error?.message ||
-      "Gemini request failed."
+      `Gemini API error (${response.status})`
     );
   }
 
-  const text =
-    data?.candidates?.[0]?.content?.parts
-      ?.map(p => p.text || "")
-      .join("")
-      .trim();
+  const text = data?.candidates?.[0]?.content?.parts
+    ?.map(part => part.text || "")
+    .join("")
+    .trim();
 
   if (!text) {
     throw new Error("Gemini returned no text.");
@@ -57,9 +57,7 @@ async function askGemini(parts) {
 }
 
 app.get("/", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "index.html")
-  );
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.get("/health", (req, res) => {
@@ -85,7 +83,7 @@ app.post("/api/chat", async (req, res) => {
       {
         text:
           "You are TopX AI, a friendly personal voice assistant. " +
-          "Answer naturally and concisely.\n\n" +
+          "Answer naturally, clearly, and concisely.\n\n" +
           "User: " +
           message
       }
@@ -94,7 +92,7 @@ app.post("/api/chat", async (req, res) => {
     res.json({ reply });
 
   } catch (error) {
-    console.error("Chat:", error);
+    console.error("CHAT ERROR:", error);
 
     res.status(500).json({
       error: error.message
@@ -112,19 +110,13 @@ app.post("/api/voice", async (req, res) => {
       });
     }
 
-    let mimeType =
-      String(
-        req.body?.mimeType ||
-        "audio/webm"
-      ).split(";")[0];
+    let mimeType = String(
+      req.body?.mimeType || "audio/webm"
+    )
+      .split(";")[0]
+      .toLowerCase();
 
-    /*
-      Gemini supports common audio formats.
-      iPhone Safari may return audio/mp4,
-      while other browsers commonly return audio/webm.
-    */
-
-    const allowed = [
+    const allowedTypes = [
       "audio/webm",
       "audio/mp4",
       "audio/mpeg",
@@ -133,20 +125,21 @@ app.post("/api/voice", async (req, res) => {
       "audio/aac"
     ];
 
-    if (!allowed.includes(mimeType)) {
-      mimeType = "audio/webm";
+    if (!allowedTypes.includes(mimeType)) {
+      return res.status(400).json({
+        error: `Unsupported audio type: ${mimeType}`
+      });
     }
 
-    const base64 =
-      audio.replace(
-        /^data:[^;]+;base64,/,
-        ""
-      );
+    const base64 = audio.replace(
+      /^data:[^;]+;base64,/,
+      ""
+    );
 
     console.log(
-      "Voice received:",
+      "VOICE RECEIVED:",
       mimeType,
-      "bytes:",
+      "base64 characters:",
       base64.length
     );
 
@@ -159,15 +152,13 @@ app.post("/api/voice", async (req, res) => {
       },
       {
         text:
-          "You are TopX AI. " +
-          "Listen to the user's recording and understand what they said. " +
-          "Reply naturally as a personal voice assistant. " +
-          "Return ONLY the answer to the user. " +
-          "Keep the answer reasonably short."
+          "You are TopX AI, a voice-first personal assistant. " +
+          "Understand what the user said in the audio and answer naturally. " +
+          "Return only the response to the user."
       }
     ]);
 
-    console.log("Voice reply:", reply);
+    console.log("VOICE REPLY:", reply);
 
     res.json({
       reply: reply
