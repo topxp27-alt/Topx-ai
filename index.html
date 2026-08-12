@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070916">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title>TopX AI</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #070916;
+      color: white;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+
+      background:
+        radial-gradient(
+          circle at 50% -10%,
+          rgba(117, 56, 255, .55),
+          transparent 34%
+        ),
+        radial-gradient(
+          circle at 10% 70%,
+          rgba(49, 88, 255, .18),
+          transparent 30%
+        ),
+        #070916;
+    }
+
+    .orb {
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      position: absolute;
+
+      top: -115px;
+      left: 50%;
+
+      transform: translateX(-50%);
+
+      background:
+        radial-gradient(
+          circle at 40% 35%,
+          #9b52ff,
+          #5420c9 45%,
+          #151043 72%
+        );
+
+      box-shadow:
+        0 0 80px rgba(112, 48, 255, .55);
+
+      pointer-events: none;
+    }
+
+    .rings {
+      position: absolute;
+
+      width: 520px;
+      height: 520px;
+
+      top: -245px;
+      left: 50%;
+
+      transform: translateX(-50%);
+
+      border:
+        1px solid rgba(111, 116, 255, .32);
+
+      border-radius: 50%;
+
+      box-shadow:
+        0 0 0 32px rgba(111, 116, 255, .08),
+        0 0 0 64px rgba(111, 116, 255, .05);
+
+      pointer-events: none;
+    }
+
+    header {
+      position: relative;
+      z-index: 2;
+
+      padding:
+        max(28px, env(safe-area-inset-top))
+        24px
+        18px;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-size: 29px;
+      font-weight: 800;
+      letter-spacing: -.7px;
+    }
+
+    .status {
+      color: #aeb7d5;
+      font-size: 15px;
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+
+      flex: 1;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      padding:
+        135px
+        20px
+        30px;
+    }
+
+    .title {
+      font-size: 42px;
+      font-weight: 800;
+
+      margin:
+        0
+        0
+        8px;
+
+      letter-spacing: -1.2px;
+    }
+
+    .subtitle {
+      color: #aab3d1;
+      font-size: 18px;
+
+      min-height: 28px;
+
+      text-align: center;
+
+      margin-bottom: 28px;
+    }
+
+    .orb-button {
+      width: min(250px, 70vw);
+      height: min(250px, 70vw);
+
+      border-radius: 50%;
+      border: 0;
+
+      position: relative;
+
+      cursor: pointer;
+
+      color: white;
+
+      background:
+        radial-gradient(
+          circle at 35% 28%,
+          #8f58ff,
+          #5625e8 42%,
+          #25115f 76%
+        );
+
+      box-shadow:
+        0 0 35px rgba(103, 50, 255, .65),
+        0 0 90px rgba(76, 43, 255, .25),
+        inset 0 0 35px rgba(255,255,255,.12);
+
+      transition:
+        transform .18s ease,
+        box-shadow .18s ease;
+
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .orb-button::after {
+      content: "";
+
+      position: absolute;
+
+      inset: -14px;
+
+      border-radius: 50%;
+
+      border:
+        1px solid rgba(139, 116, 255, .35);
+
+      animation:
+        pulse 2.4s infinite;
+    }
+
+    .orb-button:active {
+      transform: scale(.96);
+    }
+
+    .orb-button.listening {
+      box-shadow:
+        0 0 45px rgba(70, 112, 255, .9),
+        0 0 110px rgba(105, 48, 255, .55),
+        inset 0 0 45px rgba(255,255,255,.16);
+    }
+
+    .orb-button.speaking {
+      animation:
+        speakGlow 1.1s infinite alternate;
+    }
+
+    .mic {
+      font-size: 58px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .button-text {
+      font-size: 21px;
+      font-weight: 700;
+    }
+
+    .hint {
+      margin-top: 30px;
+
+      color: #8f99bb;
+
+      font-size: 14px;
+
+      text-align: center;
+
+      max-width: 330px;
+
+      line-height: 1.5;
+    }
+
+    .conversation {
+      width: min(720px, 100%);
+
+      margin-top: 34px;
+
+      display: flex;
+      flex-direction: column;
+
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 92%;
+
+      padding:
+        15px
+        17px;
+
+      border-radius: 18px;
+
+      line-height: 1.5;
+
+      font-size: 16px;
+
+      white-space: pre-wrap;
+    }
+
+    .user {
+      align-self: flex-end;
+
+      background:
+        linear-gradient(
+          135deg,
+          #3e5cff,
+          #6931ff
+        );
+    }
+
+    .ai {
+      align-self: flex-start;
+
+      background:
+        rgba(25, 29, 47, .95);
+
+      border:
+        1px solid rgba(122, 132, 174, .14);
+
+      color: #e9ecf7;
+    }
+
+    .error {
+      color: #ffb8c0;
+
+      background:
+        rgba(100, 23, 42, .45);
+    }
+
+    footer {
+      position: relative;
+      z-index: 2;
+
+      padding:
+        12px
+        20px
+        max(20px, env(safe-area-inset-bottom));
+
+      text-align: center;
+
+      color: #697394;
+
+      font-size: 12px;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: .35;
+      }
+
+      50% {
+        transform: scale(1.08);
+        opacity: .05;
+      }
+    }
+
+    @keyframes speakGlow {
+      from {
+        box-shadow:
+          0 0 35px rgba(103, 50, 255, .65);
+      }
+
+      to {
+        box-shadow:
+          0 0 80px rgba(80, 145, 255, .95),
+          0 0 130px rgba(105,48,255,.35);
+      }
+    }
+
+    @media (max-height: 700px) {
+      main {
+        padding-top: 95px;
+      }
+
+      .orb-button {
+        width: 190px;
+        height: 190px;
+      }
+
+      .mic {
+        font-size: 44px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="orb"></div>
+  <div class="rings"></div>
+
+  <header>
+
+    <div class="brand">
+      TopX
+    </div>
+
+    <div
+      class="status"
+      id="status">
+      Ready
+    </div>
+
+  </header>
+
+  <main>
+
+    <h1 class="title">
+      I'm TopX
+    </h1>
+
+    <div
+      class="subtitle"
+      id="subtitle">
+      Tap to talk to me
+    </div>
+
+    <button
+      class="orb-button"
+      id="talkButton"
+      type="button"
+      aria-label="Tap to talk">
+
+      <span class="mic">
+        🎙️
+      </span>
+
+      <span
+        class="button-text"
+        id="buttonText">
+        Tap to talk
+      </span>
+
+    </button>
+
+    <div
+      class="hint"
+      id="hint">
+
+      I'll listen to you, get an AI answer,
+      and read the answer back to you.
+
+    </div>
+
+    <div
+      class="conversation"
+      id="conversation">
+    </div>
+
+  </main>
+
+  <footer>
+    TopX AI
+  </footer>
+
+</div>
+
+<script>
+
+const talkButton =
+  document.getElementById(
+    "talkButton"
+  );
+
+const buttonText =
+  document.getElementById(
+    "buttonText"
+  );
+
+const statusEl =
+  document.getElementById(
+    "status"
+  );
+
+const subtitleEl =
+  document.getElementById(
+    "subtitle"
+  );
+
+const hintEl =
+  document.getElementById(
+    "hint"
+  );
+
+const conversation =
+  document.getElementById(
+    "conversation"
+  );
+
+
+let recorder = null;
+
+let audioChunks = [];
+
+let isListening = false;
+
+let isSpeaking = false;
+
+let speechUnlocked = false;
+
+
+function unlockSpeech() {
+
+  if (
+    speechUnlocked ||
+    !("speechSynthesis" in window)
+  ) {
+    return;
+  }
+
+  try {
+
+    const unlock =
+      new SpeechSynthesisUtterance("");
+
+    unlock.volume = 0;
+
+    window.speechSynthesis
+      .speak(unlock);
+
+    speechUnlocked = true;
+
+  } catch (_) {}
+
+}
+
+
+function speakTopX(text) {
+
+  if (
+    !text ||
+    !("speechSynthesis" in window)
+  ) {
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const utterance =
+    new SpeechSynthesisUtterance(
+      text
+    );
+
+  utterance.lang = "en-US";
+
+  utterance.rate = 0.98;
+
+  utterance.pitch = 1;
+
+  utterance.volume = 1;
+
+
+  const voices =
+    window.speechSynthesis
+      .getVoices();
+
+  const preferred =
+    voices.find(
+      voice =>
+        /^en(-US)?$/i.test(
+          voice.lang
+        ) &&
+        /Samantha|Karen|Daniel|Alex|Google US English/i
+          .test(voice.name)
+    ) ||
+    voices.find(
+      voice =>
+        /^en/i.test(
+          voice.lang
+        )
+    );
+
+  if (preferred) {
+    utterance.voice =
+      preferred;
+  }
+
+
+  utterance.onstart = () => {
+
+    isSpeaking = true;
+
+    talkButton
+      .classList
+      .add("speaking");
+
+    statusEl.textContent =
+      "Speaking...";
+
+    subtitleEl.textContent =
+      "I'm talking to you";
+
+    buttonText.textContent =
+      "Speaking...";
+
+  };
+
+
+  utterance.onend = () => {
+
+    isSpeaking = false;
+
+    talkButton
+      .classList
+      .remove("speaking");
+
+    statusEl.textContent =
+      "Ready";
+
+    subtitleEl.textContent =
+      "Tap to talk to me";
+
+    buttonText.textContent =
+      "Tap to talk";
+
+  };
+
+
+  utterance.onerror = () => {
+
+    isSpeaking = false;
+
+    talkButton
+      .classList
+      .remove("speaking");
+
+    statusEl.textContent =
+      "Ready";
+
+    buttonText.textContent =
+      "Tap to talk";
+
+  };
+
+
+  window.speechSynthesis
+    .speak(utterance);
+
+}
+
+
+function addMessage(
+  text,
+  type
+) {
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+  div.className =
+    `message ${type}`;
+
+  div.textContent =
+    text;
+
+  conversation
+    .appendChild(div);
+
+  div.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
+
+}
+
+
+function setState(state) {
+
+  if (
+    state === "listening"
+  ) {
+
+    statusEl.textContent =
+      "Listening...";
+
+    subtitleEl.textContent =
+      "I'm listening";
+
+    buttonText.textContent =
+      "Tap to stop";
+
+    talkButton
+      .classList
+      .add("listening");
+
+    hintEl.textContent =
+      "Speak normally. Tap again when you're finished.";
+
+  }
+
+  else if (
+    state === "thinking"
+  ) {
+
+    statusEl.textContent =
+      "Thinking...";
+
+    subtitleEl.textContent =
+      "I'm working on it";
+
+    buttonText.textContent =
+      "Thinking...";
+
+    talkButton
+      .classList
+      .remove("listening");
+
+    hintEl.textContent =
+      "Your recording is being sent to TopX AI.";
+
+  }
+
+  else {
+
+    statusEl.textContent =
+      "Ready";
+
+    subtitleEl.textContent =
+      "Tap to talk to me";
+
+    buttonText.textContent =
+      "Tap to talk";
+
+    talkButton
+      .classList
+      .remove("listening");
+
+    hintEl.textContent =
+      "I'll listen to you, get an AI answer, and read the answer back to you.";
+
+  }
+
+}
+
+
+function chooseMimeType() {
+
+  if (
+    !window.MediaRecorder ||
+    !MediaRecorder.isTypeSupported
+  ) {
+    return "";
+  }
+
+  const types = [
+
+    "audio/mp4",
+
+    "audio/webm;codecs=opus",
+
+    "audio/webm",
+
+    "audio/ogg;codecs=opus"
+
+  ];
+
+  return types.find(
+    type =>
+      MediaRecorder
+        .isTypeSupported(type)
+  ) || "";
+
+}
+
+
+async function startListening() {
+
+  if (
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices
+      .getUserMedia
+  ) {
+
+    throw new Error(
+      "Your browser does not support microphone access."
+    );
+
+  }
+
+
+  unlockSpeech();
+
+
+  const stream =
+    await navigator.mediaDevices
+      .getUserMedia({
+
+        audio: {
+
+          echoCancellation: true,
+
+          noiseSuppression: true,
+
+          autoGainControl: true
+
+        }
+
+      });
+
+
+  audioChunks = [];
+
+
+  const mimeType =
+    chooseMimeType();
+
+
+  recorder =
+    mimeType
+
+      ? new MediaRecorder(
+          stream,
+          {
+            mimeType
+          }
+        )
+
+      : new MediaRecorder(
+          stream
+        );
+
+
+  recorder.ondataavailable =
+    event => {
+
+      if (
+        event.data &&
+        event.data.size > 0
+      ) {
+
+        audioChunks.push(
+          event.data
+        );
+
+      }
+
+    };
+
+
+  recorder.onstop =
+    async () => {
+
+      stream
+        .getTracks()
+        .forEach(
+          track =>
+            track.stop()
+        );
+
+
+      const type =
+        recorder.mimeType ||
+        mimeType ||
+        "audio/mp4";
+
+
+      const blob =
+        new Blob(
+          audioChunks,
+          {
+            type
+          }
+        );
+
+
+      if (!blob.size) {
+
+        setState("ready");
+
+        addMessage(
+          "I didn't receive any audio. Please try again.",
+          "ai error"
+        );
+
+        return;
+
+      }
+
+
+      await sendVoice(
+        blob,
+        type
+      );
+
+    };
+
+
+  recorder.start();
+
+  isListening = true;
+
+  setState(
+    "listening"
+  );
+
+}
+
+
+function stopListening() {
+
+  if (
+    !recorder ||
+    recorder.state ===
+      "inactive"
+  ) {
+    return;
+  }
+
+  isListening = false;
+
+  recorder.stop();
+
+  setState(
+    "thinking"
+  );
+
+}
+
+
+async function sendVoice(
+  blob,
+  mimeType
+) {
+
+  try {
+
+    const reader =
+      new FileReader();
+
+
+    const base64 =
+      await new Promise(
+        (
+          resolve,
+          reject
+        ) => {
+
+          reader.onloadend =
+            () =>
+              resolve(
+                reader.result
+              );
+
+          reader.onerror =
+            reject;
+
+          reader.readAsDataURL(
+            blob
+          );
+
+        }
+      );
+
+
+    const response =
+      await fetch(
+        "/api/voice",
+        {
+
+          method: "POST",
+
+          headers: {
+
+            "Content-Type":
+              "application/json"
+
+          },
+
+          body:
+            JSON.stringify({
+
+              audio: base64,
+
+              mimeType:
+                mimeType
+
+            })
+
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        "The AI request failed."
+      );
+
+    }
+
+
+    if (!data.reply) {
+
+      throw new Error(
+        "TopX returned an empty answer."
+      );
+
+    }
+
+
+    addMessage(
+      data.reply,
+      "ai"
+    );
+
+
+    speakTopX(
+      data.reply
+    );
+
+
+    if (
+      !(
+        "speechSynthesis"
+        in window
+      )
+    ) {
+
+      hintEl.textContent =
+        "Your browser does not support speech playback.";
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    setState(
+      "ready"
+    );
+
+    addMessage(
+      error.message ||
+        "Something went wrong.",
+      "ai error"
+    );
+
+  }
+
+}
+
+
+talkButton
+  .addEventListener(
+    "click",
+    async () => {
+
+      if (isSpeaking) {
+
+        window.speechSynthesis
+          .cancel();
+
+        isSpeaking = false;
+
+        setState(
+          "ready"
+        );
+
+        return;
+
+      }
+
+
+      if (isListening) {
+
+        stopListening();
+
+        return;
+
+      }
+
+
+      try {
+
+        await startListening();
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
+        setState(
+          "ready"
+        );
+
+        addMessage(
+          "Microphone error: " +
+          (
+            error.message ||
+            "Permission was not granted."
+          ),
+          "ai error"
+        );
+
+      }
+
+    }
+  );
+
+
+if (
+  "speechSynthesis"
+  in window
+) {
+
+  window.speechSynthesis
+    .onvoiceschanged =
+      () => {
+
+        window.speechSynthesis
+          .getVoices();
+
+      };
+
+}
+
+</script>
+
+</body>
+</html>
